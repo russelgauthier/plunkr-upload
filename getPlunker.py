@@ -1,19 +1,25 @@
 #!/usr/bin/python3
 import sys
 import subprocess
-import shutil
 import os
 
-if len(sys.argv) != 5:
-    print("Error: 4 arguments required -> plunkerID, FTP hostname, FTP username, FTP password")
+if len(sys.argv) not in (2, 5, 6):
+    print("Error: specify the plunkerID. If upload desired include add FTP hostname, FTP username, FTP password and optionally the FTP dir")
     exit(-1)
 
-(plunkrId, ftp_hostname, ftp_username, ftp_password) = sys.argv[1:]
+plunkrId = sys.argv[1]
+
+toUpload = False
+if len(sys.argv) >= 5:
+    (ftp_hostname, ftp_username, ftp_password) = sys.argv[2:5]
+    toUpload = True
+
+ftp_dir = ""
+if len(sys.argv) == 6:
+    ftp_dir = sys.argv[5]
+
 tmpFileName = "%s.html" % plunkrId
 ftp_template_name = "ftp_upload_template.txt"
-#ftp_hostname = "ftp.movadamedia.com"
-#ftp_username = "russelg"
-#ftp_password = "Password1!"
 
 def runCmd(cmd):
     p = None
@@ -66,7 +72,18 @@ def uploadFiles(plunkrId):
                 currLine += "put %s %s\n" % (fileSrc, filesDest[i])
 
                 i += 1
+        elif currLine == "cd $WEBDIR":
+            if len(ftp_dir) > 0:
+                currLine = "cd %s" % ftp_dir
+            else:
+                currLine = ""
+
         contents += currLine + "\n"
+    print(contents)
     runCmd(contents)
+    print("Upload complete")
+
 getFiles(plunkrId)
-uploadFiles(plunkrId)
+if toUpload:
+    uploadFiles(plunkrId)
+
