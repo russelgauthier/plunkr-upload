@@ -1,0 +1,10 @@
+#!/bin/bash
+ftp -n $HOST <<EOF
+quote USER $USER
+quote PASS $PASSWD
+binary
+cd http
+put $FILE
+quit
+exit 0
+EOF
