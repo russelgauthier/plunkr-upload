@@ -3,7 +3,7 @@ ftp -n $HOST <<EOF
 quote USER $USER
 quote PASS $PASSWD
 binary
-cd http
+cd $WEBDIR
 put $FILE
 quit
 exit 0
