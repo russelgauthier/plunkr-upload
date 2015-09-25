@@ -27,10 +27,14 @@ def runCmd(cmd):
     return res
 
 
+def downloadFile(fileName, plunkrId):
+    assetStart = 'wget "http://run.plnkr.co/plunks/%s/' % (plunkrId)
+    downloadCmd = assetStart + '%s" -O %s' % (fileName, os.path.join(plunkrId, fileName))
+    print(downloadCmd)
+    runCmd(downloadCmd)
+
 def getFiles(plunkrId):
     cmdStart = 'wget "http://embed.plnkr.co/%s/preview" -O %s' % (plunkrId, tmpFileName)
-    assetStart = 'wget "http://run.plnkr.co/plunks/%s/' % (plunkrId)
-
     runCmd(cmdStart)
 
     if not os.path.isdir(plunkrId):
@@ -44,20 +48,26 @@ def getFiles(plunkrId):
     for part in parts[1:]:
         currFileName = part.split("'})\">")[0].split(" '")[1].strip()
     
-        downloadCmd = assetStart + '%s" -O %s' % (currFileName, os.path.join(plunkrId, currFileName))
-        runCmd(downloadCmd)
-    
+        fileParts = currFileName.split(".")
+        if fileParts[-1] == "scss":
+            cssFile = ".".join(fileParts[:-1]) + ".css"
+            downloadFile(cssFile, plunkrId)
+        downloadFile(currFileName, plunkrId)
     os.remove(tmpFileName)
 
-def uploadFiles(plunkrId):
+def getValidFiles(plunkrId):
     filesSrc = []
     filesDest = []
     for (_path, _dirs, _files) in os.walk(plunkrId):
         for _file in _files:
-            currFile = os.path.join(os.getcwd(), "/".join([_path, _file]))
-            filesSrc += [currFile]
-            filesDest += [_file]
+            currFile = "/".join([_path, _file])
+            if len(currFile.split("/")) <= 2:
+                filesSrc += [currFile]
+                filesDest += [_file]
+    return (filesSrc, filesDest)
 
+def uploadFiles(plunkrId):
+    (filesSrc, filesDest) = getValidFiles(plunkrId)
     print("Uploading files...")
     contents = ""
     for line in open(ftp_template_name):
@@ -83,7 +93,7 @@ def uploadFiles(plunkrId):
     runCmd(contents)
     print("Upload complete")
 
+
 getFiles(plunkrId)
 if toUpload:
     uploadFiles(plunkrId)
-
